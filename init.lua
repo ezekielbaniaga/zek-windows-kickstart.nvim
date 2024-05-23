@@ -201,7 +201,7 @@ vim.keymap.set('n', '<leader>sm', '<C-w>_<C-w>|', { desc = '[S]plit [M]aximize' 
 vim.keymap.set('n', '<leader>s+', '<C-w>+', { desc = 'Increase Height' })
 vim.keymap.set('n', '<leader>s-', '<C-w>-', { desc = 'Decrease Height' })
 vim.keymap.set('n', '<leader>s<', '<C-w><', { desc = 'Decrease Width' })
-vim.keymap.set('n', '<leader>s>', '<C-w>>', { desc = 'Decrease Width' })
+vim.keymap.set('n', '<leader>s>', '<C-w>>', { desc = 'Increase Width' })
 
 -- Tabs keymaps
 vim.keymap.set('n', '<leader>to', '<cmd>tabnew<CR>', { desc = 'Open New Tab' })
@@ -918,7 +918,11 @@ require('lazy').setup({
       require('mini.pairs').setup()
 
       -- Similar to NvimTree
-      require('mini.files').setup()
+      require('mini.files').setup {
+        mappings = {
+          go_in_plus = '<CR>',
+        },
+      }
 
       -- Better Around/Inside textobjects
       --
