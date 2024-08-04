@@ -388,19 +388,28 @@ require('lazy').setup({
       require('which-key').setup()
 
       -- Document existing key chains
-      require('which-key').register {
-        ['<leader>w'] = { name = '[W]rite', _ = 'which_key_ignore' },
-        ['<leader>q'] = { name = '[Q]uit', _ = 'which_key_ignore' },
-        ['<leader>f'] = { name = '[F]ind', _ = 'which_key_ignore' },
-        ['<leader>t'] = { name = '[T]abs', _ = 'which_key_ignore' },
-        ['<leader>s'] = { name = '[S]plits', _ = 'which_key_ignore' },
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-        ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
+      require('which-key').add {
+        { '<leader>w', group = '[W]rite' },
+        { '<leader>w_', hidden = true },
+        { '<leader>q', group = '[Q]uit' },
+        { '<leader>q_', hidden = true },
+        { '<leader>f', group = '[F]ind' },
+        { '<leader>f_', hidden = true },
+        { '<leader>t', group = '[T]abs' },
+        { '<leader>t_', hidden = true },
+        { '<leader>s', group = '[S]plits' },
+        { '<leader>s_', hidden = true },
+        { '<leader>c', group = '[C]ode' },
+        { '<leader>c_', hidden = true },
+        { '<leader>r', group = '[R]ename' },
+        { '<leader>r_', hidden = true },
+        { '<leader>h', group = 'Git [H]unk' },
+        { '<leader>h_', hidden = true },
       }
       -- visual mode
-      require('which-key').register({
-        ['<leader>h'] = { 'Git [H]unk' },
+      require('which-key').add({
+        { '<leader>h', group = 'Git [H]unk' },
+        { '<leader>h_', hidden = true },
       }, { mode = 'v' })
     end,
   },
@@ -905,7 +914,8 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'lunaperche'
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
