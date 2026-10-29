@@ -1000,6 +1000,17 @@ require('lazy').setup({
     end,
   },
 
+  -- Markdown rendering
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    ft = { 'markdown' },
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
+    opts = {},
+    keys = {
+      { '<leader>m', '<cmd>RenderMarkdown toggle<CR>', desc = 'Toggle [M]arkdown render' },
+    },
+  },
+
   -- Java
   {
     'nvim-java/nvim-java',
