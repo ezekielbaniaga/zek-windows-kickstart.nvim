@@ -165,7 +165,7 @@ vim.opt.scrolloff = 8
 
 -- Quick Save and Close (:w, :wq, :q)
 vim.keymap.set('n', '<leader>w', '<cmd>w<CR>', { desc = 'Quick Save' })
-vim.keymap.set('n', '<leader>wq', '<cmd>wq<CR>', { desc = 'Quick Save & Close' })
+vim.keymap.set('n', '<leader>x', '<cmd>wq<CR>', { desc = 'Quick Save & Close' })
 vim.keymap.set('n', '<leader>q', '<cmd>q<CR>', { desc = 'Quick Close' })
 
 -- Disable Macro recording
@@ -213,8 +213,12 @@ vim.keymap.set('n', '<leader>tp', '<cmd>tabp<CR>', { desc = 'Go To Prev Tab' })
 vim.keymap.set('n', '<leader>e', '<cmd>lua MiniFiles.open()<CR>', { desc = 'Open File Explorer' })
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next [D]iagnostic message' })
+vim.keymap.set('n', '[d', function()
+  vim.diagnostic.jump { count = -1, float = true }
+end, { desc = 'Go to previous [D]iagnostic message' })
+vim.keymap.set('n', ']d', function()
+  vim.diagnostic.jump { count = 1, float = true }
+end, { desc = 'Go to next [D]iagnostic message' })
 -- vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic [E]rror messages' })
 -- vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
@@ -253,19 +257,19 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
---  See `:help vim.highlight.on_yank()`
+--  See `:help vim.hl.on_yank()`
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
-    vim.highlight.on_yank()
+    vim.hl.on_yank()
   end,
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
   vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
 end ---@diagnostic disable-next-line: undefined-field
@@ -326,7 +330,7 @@ require('lazy').setup({
         -- Navigation
         map('n', '<leader>h]', function()
           if vim.wo.diff then
-            vim.cmd.normal { '<leader>h]', bang = true }
+            vim.cmd.normal { ']c', bang = true }
           else
             gitsigns.nav_hunk 'next'
           end
@@ -334,7 +338,7 @@ require('lazy').setup({
 
         map('n', '<leader>h[', function()
           if vim.wo.diff then
-            vim.cmd.normal { '<leader>h[', bang = true }
+            vim.cmd.normal { '[c', bang = true }
           else
             gitsigns.nav_hunk 'prev'
           end
@@ -349,14 +353,13 @@ require('lazy').setup({
           gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { desc = 'reset git hunk' })
         -- normal mode
-        map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'git [s]tage hunk' })
+        map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'git [s]tage/unstage hunk' })
         map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
         map('n', '<leader>hS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
-        map('n', '<leader>hu', gitsigns.undo_stage_hunk, { desc = 'git [u]ndo stage hunk' })
         map('n', '<leader>hR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
         map('n', '<leader>hp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
         map('n', '<leader>hb', gitsigns.blame_line, { desc = 'git [b]lame line' })
-        map('n', '<leader>ht', gitsigns.toggle_deleted, { desc = 'Toggle git show deleted' })
+        map('n', '<leader>ht', gitsigns.preview_hunk_inline, { desc = 'Toggle git show deleted (inline preview)' })
         map('n', '<leader>hz', gitsigns.toggle_current_line_blame, { desc = 'Toggle git show blame line' })
         map('n', '<leader>hd', gitsigns.diffthis, { desc = 'git [d]iff against index' })
         map('n', '<leader>hD', function()
@@ -389,8 +392,6 @@ require('lazy').setup({
 
       -- Document existing key chains
       require('which-key').add {
-        { '<leader>w', group = '[W]rite' },
-        { '<leader>w_', hidden = true },
         { '<leader>q', group = '[Q]uit' },
         { '<leader>q_', hidden = true },
         { '<leader>f', group = '[F]ind' },
@@ -706,6 +707,7 @@ require('lazy').setup({
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       -- See `:help lsp-config` for information about keys and how to configure
       local servers = {
+        lua_ls = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -727,7 +729,9 @@ require('lazy').setup({
 
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
+      -- NOTE: Without mason-lspconfig, mason-tool-installer only understands Mason package
+      -- names (e.g. `lua-language-server`, not `lua_ls`), so list each server's package below.
+      local ensure_installed = {}
       vim.list_extend(ensure_installed, {
         'lua-language-server', -- Lua Language server
         'stylua', -- Used to format Lua code
@@ -740,6 +744,23 @@ require('lazy').setup({
         vim.lsp.config(name, server)
         vim.lsp.enable(name)
       end
+
+      -- Override jdtls as specified in nvim-java
+      vim.lsp.config('jdtls', {
+        settings = {
+          java = {
+            configuration = {
+              runtimes = {
+                {
+                  name = 'JavaSE-25',
+                  path = '/opt/java/jdk-25.0.3+9/',
+                  default = true,
+                },
+              },
+            },
+          },
+        },
+      })
     end,
   },
 
@@ -750,7 +771,7 @@ require('lazy').setup({
     --   {
     --     '<leader>f',
     --     function()
-    --       require('conform').format { async = true, lsp_fallback = true }
+    --       require('conform').format { async = true, lsp_format = 'fallback' }
     --     end,
     --     mode = '',
     --     desc = '[F]ormat buffer',
@@ -765,7 +786,7 @@ require('lazy').setup({
         local disable_filetypes = { c = true, cpp = true }
         return {
           timeout_ms = 500,
-          lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
+          lsp_format = disable_filetypes[vim.bo[bufnr].filetype] and 'never' or 'fallback',
         }
       end,
       formatters_by_ft = {
@@ -837,10 +858,18 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'default',
+        -- preset = 'default',
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
+
+        -- disable default preset to take full control
+        preset = 'none',
+
+        -- familiar control k,j, and enter to accept selection
+        ['<C-k>'] = { 'select_prev', 'fallback' },
+        ['<C-j>'] = { 'select_next', 'fallback' },
+        ['<CR>'] = { 'accept', 'fallback' },
       },
 
       appearance = {
@@ -850,9 +879,13 @@ require('lazy').setup({
       },
 
       completion = {
-        -- By default, you may press `<c-space>` to show the documentation.
-        -- Optionally, set `auto_show = true` to show the documentation after a delay.
-        documentation = { auto_show = false, auto_show_delay_ms = 500 },
+        documentation = {
+          auto_show = true,
+          auto_show_delay_ms = 200, -- tweak delay to taste
+          window = {
+            border = 'shadow', -- or 'single', 'double', 'shadow', 'none'
+          },
+        },
       },
 
       sources = {
@@ -948,15 +981,31 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     config = function()
-      local filetypes =
+      local parsers =
         { 'gdscript', 'godot_resource', 'gdshader', 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
-      require('nvim-treesitter').install(filetypes)
+      require('nvim-treesitter').install(parsers)
+
+      -- Parser names are not always filetypes (e.g. vimdoc -> help, bash -> sh), so map them
+      local filetypes = {}
+      for _, parser in ipairs(parsers) do
+        vim.list_extend(filetypes, vim.treesitter.language.get_filetypes(parser))
+      end
       vim.api.nvim_create_autocmd('FileType', {
         pattern = filetypes,
-        callback = function()
-          vim.treesitter.start()
+        callback = function(args)
+          -- pcall: parser may still be installing on first launch
+          pcall(vim.treesitter.start, args.buf)
         end,
       })
+    end,
+  },
+
+  -- Java
+  {
+    'nvim-java/nvim-java',
+    config = function()
+      require('java').setup()
+      vim.lsp.enable 'jdtls'
     end,
   },
 
