@@ -940,5 +940,8 @@ require('lazy').setup({
 vim.cmd.colorscheme 'lunaperche'
 vim.cmd.hi 'Comment gui=none'
 
+-- Animated start screen (see lua/custom/dashboard.lua, reopen with :ZekDash)
+require('custom.dashboard').setup()
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
