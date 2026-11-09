@@ -44,7 +44,9 @@ local glyphs = {
   [' '] = { '   ', '   ', '   ', '   ', '   ', '   ' },
 }
 
-local BARS = { '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█' }
+-- Braille dot bits for a 2x4 cell, listed bottom row first (btop-style graphs)
+local DOTS_L = { 0x40, 0x04, 0x02, 0x01 }
+local DOTS_R = { 0x80, 0x20, 0x10, 0x08 }
 
 local keys = {
   { 'e', 'File explorer' },
@@ -274,14 +276,26 @@ local function box(r, c, h, w, num, title, hl)
   end
 end
 
+-- Each cell holds two samples (left/right dot column) and four dot rows
 local function graph(r, c, h, w, hist, prefix)
   local n = #hist
   for x = 0, w - 1 do
-    local total = (hist[n - (w - 1 - x)] or 0) * h * 8
+    local i = n - 2 * (w - 1 - x)
+    local left = (hist[i - 1] or 0) * h * 4
+    local right = (hist[i] or 0) * h * 4
     for y = 0, h - 1 do
-      local fill = math.floor(total - y * 8 + 0.5)
-      if fill > 0 then
-        put_ch(r + h - 1 - y, c + x, BARS[math.min(fill, 8)], prefix .. grad_idx(h > 1 and y / (h - 1) or 0))
+      local bits = 0
+      for d = 1, 4 do
+        local level = y * 4 + d - 0.5
+        if left >= level then
+          bits = bits + DOTS_L[d]
+        end
+        if right >= level then
+          bits = bits + DOTS_R[d]
+        end
+      end
+      if bits > 0 then
+        put_ch(r + h - 1 - y, c + x, vim.fn.nr2char(0x2800 + bits), prefix .. grad_idx(h > 1 and y / (h - 1) or 0))
       end
     end
   end
@@ -746,7 +760,7 @@ end
 function M.setup()
   vim.opt.shortmess:append 'I' -- hide the built-in intro, the dashboard shows it instead
   init_state()
-  for _ = 1, 300 do
+  for _ = 1, 600 do
     update_data()
   end
   define_hl()
